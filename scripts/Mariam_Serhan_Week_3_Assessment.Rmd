@@ -1,0 +1,400 @@
+---
+title: "Week 3 Assessment"
+author: "Mariam Serhan"
+date: "2026-09-27"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+# Load Packages and Import Data
+
+Using `pacman`, the following packages are loaded, and the data is imported.
+
+```{r load}
+#Load packages
+
+library(pacman)
+pacman::p_load(rio, here, tidyverse, dplyr, janitor, rmarkdown, knitr, pandoc, 
+               tinytex, skimr, formatR, gridExtra, janitor, RColorBrewer, 
+               viridis, ggpubr, ggplot2, cowplot, ggokabeito, colorspace, 
+               rcartocolor, gghighlight)
+
+# Import the cleaned dataset using here()
+
+diet <- import(here("data", "diet.csv"))
+cleaned_NHANES <- import(here("data", "cleaned_NHANES.csv"))
+
+```
+
+# Exercise 1 Reproducing and rearranging ggplot2 figures
+
+To recreate the age plot the `ggplot()` function was used: 
+
+```{r age_plot}
+
+age_ex1 <- ggplot(cleaned_NHANES, aes(x = age, fill = gender)) +
+  geom_histogram(binwidth = 5, position = "dodge") +
+  labs(x = "Age (years)", 
+       y = "Count"
+  )
+
+age_ex1
+
+```
+
+To recreate the ethnicity plot the `ggplot()` function was used: 
+
+```{r ethncity_plot}
+
+ethnicity_ex1 <- ggplot(cleaned_NHANES, aes(x = ethnicity_2)) +
+  geom_bar(aes(fill = gender), position = "fill") +
+  labs(x = "Ethnicity", 
+       y = "Proportion"
+  )
+
+ethnicity_ex1
+
+```
+
+Combine the plots using the `plot_grid()` function from `cowplot`:
+
+```{r cowplot_plot}
+
+plot_grid_plot <- plot_grid(
+  age_ex1, ethnicity_ex1, 
+  nrow = 1, ncol = 2,
+  rel_heights = c(1, 1),
+  rel_widths = c(1, 1),
+  labels = c("A", "B")
+)
+
+plot_grid_plot
+
+```
+
+Combine the plots using the `ggarrange()`:
+
+```{r ggarrange_plot}
+
+ggarrange_plot <- 
+  ggarrange(
+  age_ex1, ethnicity_ex1,
+  nrow = 1, 
+  ncol = 2,
+  common.legend = TRUE, 
+  legend = "top"
+)
+
+ggarrange_plot
+
+```
+
+When comparing the two plots, the layout that looks better is the one generate by `ggarrange()`. Both graphs have the same legend, and with the `common.legend` argument `= TRUE`, only one legend will show on the combined plot, making the overall figure easier to read. 
+
+# Exercise 2: Visualizing key characteristics
+
+To determine the number of missing values for each variable, the following function is used:
+
+```{r missing_values}
+
+colSums(is.na(cleaned_NHANES[,c("age", "gender", "ethnicity_1", "ethnicity_2")]))
+
+```
+There are no missing values for any of the variables in question. 
+
+Visualization of age variable:
+The age range is from 0 to 80 years and there is a higher distribution of participants under the age of 20 relative to the rest of the population
+
+```{r age_visualization}
+
+age_ex2 <- ggplot(cleaned_NHANES, aes(x = age)) +
+  geom_histogram(binwidth = 5, fill = "lightblue", color = "black"
+  ) +
+  labs(
+    x = "Age", 
+    y = "Count",
+    title = "Age Distribution"
+  ) +
+  theme_bw()
+
+age_ex2
+
+ggsave("age_ex2.png", plot = age_ex2, path = here("figures"))
+    
+```
+
+Visualization of gender variable:
+The distribution between females are males are relatively equal with females having a slightly higher count than males.
+
+```{r gender_visualization}
+
+gender_ex2 <- ggplot(cleaned_NHANES, aes(x = gender)) +
+  geom_bar(fill = "lightblue", color = "black") +
+  labs(
+    x = "Gender",
+    y = "Count", 
+    title = "Distribution of Gender"
+  ) +
+  theme_bw()
+
+gender_ex2
+
+ggsave("gender_ex2.png", plot = gender_ex2, path = here("figures"))
+
+```
+
+Visualization of ethnicity_1 variable:
+The majority of the participants are white, followed by Black, Mexican and Other are relatively similar, and the smallest population falls under the Other Hispanic category.  
+
+```{r eth_1_visualization}
+
+eth_1_ex2 <- ggplot(cleaned_NHANES, aes(x = ethnicity_1)) +
+  geom_bar(fill = "lightblue", color = "black") +
+  labs(
+    x = "Ethnicity",
+    y = "Count",
+    title = "Distribution of Ethnicity_1"
+  ) +
+  theme_bw()
+
+eth_1_ex2
+
+ggsave("eth_1_ex2.png", plot = eth_1_ex2, path = here("figures"))
+
+```
+  
+Visualization of ethnicity_2 variable:
+The majority of the participants are white, followed by Black, Mexican, Other Hispanic and Asian are relatively similar, and the smallest population falls under the Other category. 
+
+```{r eth_2_visualization}
+
+eth_2_ex2 <- ggplot(cleaned_NHANES, aes(x = ethnicity_2)) +
+  geom_bar(fill = "lightblue", color = "black") +
+  labs(
+    x = "Ethnicity",
+    y = "Count",
+    title = "Distribution of Ethnicity_2"
+  ) +
+  theme_bw()
+
+eth_2_ex2
+
+ggsave("eth_2_ex2.png", plot = eth_2_ex2, path = here("figures"))
+
+```
+When looking at both ethnicity variables, `ethnicity_2` is more appropriate to keep since it has more categories (Asian) that will give a more accurate depiction of the ethnic subgroups in the population. 
+
+# Exercise 3: Improving ggplot figure
+
+## Recreating the figure:
+
+```{r bad_figure, fig.height=7, fig.width=8}
+
+ggplot(diet, aes(
+  x = Week, 
+  y = Weight, 
+  group = Participant, 
+  color = as.factor(Participant)
+  )
+) +
+  geom_line() +
+  labs(
+    x = "Week",
+    y = "Weight",
+    color = "Participant"
+  )
+
+```
+
+Looking at the above graph there are several issues:
+
+  * Weight has no units
+    ** The y axis will represent % change, eliminating the need for a unit
+  * The graph is meant to show the change in body weight over weeks but since each participant has a different starting weight, it is not clear how much (relatively) each participant lost or gained during the 16 weeks.
+    ** % weight change will be calculated. 
+  * Having all 20 participants on the same graph makes it hard to read.
+   ** The participants will be faceted, so the progress of each participant is easy to follow.
+  * Overuse (and repetition) of colors also makes the graph hard to read to track each subject's progress.
+   ** The participants will be faceted, eliminating the need to color to differentiate between participants.
+  * The grey background also makes the lines harder to follow. 
+  ** The background will be removed
+
+## Improving the figure:
+
+Since the goal is to create a figure that clearly shows how each participant's weight has changed over time, in comparison to their weight at week 0, the change in weight for each week has to be calculated and added to the data set:
+
+```{r percent_change}
+
+percent_change_diet <- diet %>%
+  group_by(Participant) %>%
+  arrange(Week) %>%
+  mutate(
+    percent_change = (Weight - first(Weight)) / first(Weight) * 100
+  )
+
+```
+
+Using that new data set, the improved figure is constructed using ggplot: 
+
+``` {r new_figure, fig.height=9, fig.width=9}
+
+ggplot(percent_change_diet, aes(
+  x = Week, 
+  y = percent_change, 
+  group = Participant, 
+  )
+) +
+  facet_wrap(~ Participant) +
+  geom_line(color = "darkred") +
+  labs(
+    x = "Week",
+    y = "Percent change from baseline (%)",
+    title = "Percent change in weight over 16 weeks, by participant number",
+  ) +
+  theme_bw() +
+  theme(
+    legend.position = "none",
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor.x = element_blank()
+  )
+
+```
+
+# Exercise 4: Exploring relationships through visualizations
+
+## Step 1: Average SBP variable
+
+Create an average SBP variable using the 4 SBP readings:
+
+```{r average_SBP_calc}
+
+cleaned_NHANES_avrg_SBP <- cleaned_NHANES %>%
+  mutate(
+    SBP_avg = rowMeans(
+      cbind(systolic_bp_1, systolic_bp_2, systolic_bp_3, systolic_bp_4), na.rm = TRUE
+  )
+  )
+
+```
+
+## Step 2: Filter data
+
+Create new data set that includes only individuals who have non-missing values for age, gender, and average SBP:
+
+```{r new_dataset}
+
+filtered_data <- cleaned_NHANES_avrg_SBP %>%
+  filter(
+    !is.na(age),
+    !is.na(gender),
+    !is.na(SBP_avg)
+  )
+
+```
+
+## Step 3: Create new categorical variables
+
+Create new categorical variable that classifies participants based on their average SBP:
+
+```{r SBP_categories}
+
+SBP_cat_data <- filtered_data %>%
+  mutate(
+    SBP_cat = factor(
+      case_when(
+        SBP_avg < 120 ~ "Normal",
+        SBP_avg >= 120 & SBP_avg < 130 ~ "Elevated",
+        SBP_avg >= 130 & SBP_avg < 140 ~ "Stage 1 hypertension",
+        SBP_avg >= 140 ~ "Stage 2 hypertension"
+      ),
+      levels = c(
+        "Normal",
+        "Elevated",
+        "Stage 1 hypertension",
+        "Stage 2 hypertension"
+      )
+    )
+  )
+
+```
+
+## Step 4: Generate plots to describe the final sample
+
+Age distribution:
+The newer distribution is more skewed towards ages < 20, and when comparing it to the age distribution of the original data set, the original data has more participants with ages < 20, indicating that the BP study had a lower age limit for participation.
+
+```{r step_4_age}
+
+age_ex2
+
+ggplot(SBP_cat_data, aes(x = age)) +
+  geom_histogram(binwidth = 5, fill = "lightblue", color = "black"
+  ) +
+  labs(
+    x = "Age", 
+    y = "Count",
+    title = "Age Distribution using SBP data"
+  ) +
+  theme_bw()
+
+```
+
+Gender distribution:
+The gender distribution is relatively even, with the females slightly higher than males. Even when comparing to the original data, the only difference is in the count and not the distribution. 
+
+```{r step_4_gender}
+
+ggplot(SBP_cat_data, aes(x = gender)) +
+  geom_bar(fill = "lightblue", color = "black") +
+  labs(
+    x = "Gender",
+    y = "Count", 
+    title = "Distribution of Gender"
+  ) +
+  theme_bw()
+
+```
+
+Systolic Blood Pressure Distribution: 
+
+The majority of participants have normal blood pressure. There are more participants that have stage 2 hypertension vs stage 1. The number of participants that have elevated systolic blood pressure is slightly higher than the number of participants that have stage 2 hypertension. 
+
+```{r step_4_SBP}
+
+ggplot(SBP_cat_data, aes(x = SBP_cat)) +
+  geom_bar(fill = "lightblue", color = "black") +
+  labs(
+    x = "Blood Pressure Classification",
+    y = "Count", 
+    title = "Distribution of Systolic Blood Pressure"
+  ) +
+  theme_bw()
+
+```
+
+## Step 5: Hypertension categories across age and gender
+
+```{r Step_5}
+
+ggplot(SBP_cat_data, aes(x = age_cat, fill = gender)) +
+  geom_bar(position = "dodge") +
+  facet_wrap(~ SBP_cat, scales = "free") +
+  labs(
+    title = "Distribution of Age and Gender by Hypertension Categories",
+    x = "Age Range",
+    y = "Count",
+    fill = "Gender"
+  ) +
+  scale_fill_manual(values = c("deeppink", "blue")) +
+  theme_bw() +
+  theme(
+    legend.position = "top",
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor.x = element_blank(),
+  )
+
+```

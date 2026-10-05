@@ -1,0 +1,104 @@
+---
+title: "NHANES Dashboard"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+---
+
+```{r setup, include=FALSE}
+
+#Load packages
+
+library(pacman)
+pacman::p_load(rio, here, tidyverse, dplyr, janitor, rmarkdown, knitr, pandoc, 
+               tinytex, skimr, formatR, gridExtra, janitor, RColorBrewer, 
+               viridis, ggpubr, ggplot2, cowplot, ggokabeito, colorspace, 
+               rcartocolor, gghighlight, DT, flexdashboard)
+
+# Import the cleaned dataset using here()
+
+cleaned_NHANES <- import(here("data", "cleaned_NHANES.csv"))
+cleaned_NHANES_avrg_SBP <- import(here("data", "cleaned_NHANES_avrg_SBP.csv"))
+
+```
+
+Top Row {data-height=650}
+-----------------------------------------------------------------------
+
+### Distribution of Age, Gender, and Ethnicity within the NHANES Dataset
+
+```{r exercise_3, fig.width=20, fig.align='center'}
+
+age_ex2 <- ggplot(cleaned_NHANES, aes(x = age)) +
+  geom_histogram(binwidth = 5, fill = "lightblue", color = "black"
+  ) +
+  labs(
+    x = "Age", 
+    y = "Count",
+    title = "Age Distribution"
+  ) +
+  theme_bw()
+
+gender_ex2 <- ggplot(cleaned_NHANES, aes(x = gender)) +
+  geom_bar(fill = "lightblue", color = "black") +
+  labs(
+    x = "Gender",
+    y = "Count", 
+    title = "Distribution of Gender"
+  ) +
+  theme_bw()
+
+eth_2_ex2 <- ggplot(cleaned_NHANES, aes(x = ethnicity_2)) +
+  geom_bar(fill = "lightblue", color = "black") +
+  labs(
+    x = "Ethnicity",
+    y = "Count",
+    title = "Distribution of Ethnicity_2"
+  ) +
+  theme_bw()
+
+exercise3_plot <- plot_grid(
+  age_ex2, gender_ex2, eth_2_ex2,
+  nrow = 1, ncol = 3,
+  rel_heights = c(1, 1, 1),
+  rel_widths = c(1, 1, 1)
+)
+
+exercise3_plot
+
+```
+
+Bottom Row {data-height=350}
+-----------------------------------------------------------------------
+
+### Percentage of Participants Over 21
+
+```{r gauge}
+
+percent_over_21 <- mean(cleaned_NHANES$age >= 21, na.rm = TRUE) * 100
+
+gauge(
+  percent_over_21,
+  min = 0,
+  max = 100,
+  symbol = "%",
+  gaugeSectors(
+    success = c(21, 100),
+    danger = c(0, 20),
+    colors = c("lightblue", "black")
+    )
+  )
+
+```
+
+### Percentage of Participants with an average systolic blood pressure above 120 mm Hg
+
+```{r value_box}
+
+percent_over_120 <- mean(cleaned_NHANES_avrg_SBP$SBP_avg >= 120, na.rm = TRUE) * 100
+
+valueBox(round(percent_over_120, digits = 1),
+         color = "lightblue")
+
+
+```

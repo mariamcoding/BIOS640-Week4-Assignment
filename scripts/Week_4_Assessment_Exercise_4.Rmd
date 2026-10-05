@@ -1,0 +1,224 @@
+---
+title: "Week 4 Assessment Exercise 4"
+author: "Mariam Serhan"
+date: "2026-10-05"
+output: 
+  pdf_document:
+    toc: true
+fontsize: 11pt
+citecolor: darkgreen
+urlcolor: blue
+bibliography: supportingfiles/references.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+# Introduction to the NHANES Data Set 
+
+The National Health and Nutrition Examination Survey (NHANES) is a program run by the CDC's National Center for Health Statistics (NCHS) and it purpose is to assess the health and nutrition of the American population. [@NHANES] Their data is released to the public and can be aquired using this link here: https://wwwn.cdc.gov/nchs/nhanes/ 
+
+In this assignment, waves 2015, 2016 and 2017 will be used. 
+
+# Importing Data and Loading Packages
+
+```{r importdata}
+
+library(pacman)
+
+pacman::p_load(rio, here, dplyr, ggplot2, DT, tidyverse, formatR, gridExtra,
+               pandoc, skimr, knitr, pandoc, flexdashboard, gt, flextable, 
+               reactable, kableExtra, janitor, ggpubr)
+
+cleaned_NHANES <- import(here("data", "cleaned_NHANES.csv"))
+cleaned_NHANES_avrg_SBP <- import(here("data", "cleaned_NHANES_avrg_SBP.csv"))
+
+```
+# Creating Complex Tables
+
+## Overall sample size of each wave
+
+``` {r table_samplesize}
+
+# sample size of each wave
+
+table_size_wave <- table(cleaned_NHANES$wave_id)
+table_size_wave
+
+# format table
+table_size_wave <- kable(
+  table_size_wave, 
+  format = "latex",
+  booktabs = TRUE,
+  col.names = c("Wave ID", "Count"),
+  caption = "NHANES sample size of each wave"
+  
+)
+
+# style table
+
+table_size_wave <- table_size_wave %>%
+	kable_styling(
+		latex_options = "hold_position",
+		full_width = FALSE 
+)
+table_size_wave
+
+```
+
+
+## Number and percentage of males
+
+``` {r tables_males}
+
+# sample size of each wave by gender
+
+count_wave_gender <- table(cleaned_NHANES$wave_id, cleaned_NHANES$gender)
+count_wave_gender
+
+addmargins(count_wave_gender, margin = 2)
+
+# row percentages
+
+row_percent_gender <- prop.table(count_wave_gender, margin = 1) * 100
+row_percent_gender
+
+#combine and only keep male stats
+
+male_percent_size <- as.data.frame(cbind(
+  n = rowSums(count_wave_gender),
+  Male = round(row_percent_gender[, 2], 1)
+))
+male_percent_size
+
+# Format table
+
+male_percent_size <- kable(
+  male_percent_size, 
+  format = "latex",
+  booktabs = TRUE,
+  col.names = c("Count", "Percent Male"),
+  caption = "Percentage of male participants by wave year"
+)
+
+# style table
+
+male_percent_size <- male_percent_size %>%
+	kable_styling(
+		latex_options = "hold_position",
+		full_width = FALSE 
+)
+male_percent_size
+```
+
+## Number and percentage of each ethnicity for each wave
+
+``` {r tables_ethnicity}
+
+# sample size of each wave by ethncity 
+
+count_wave_ethn <- table(cleaned_NHANES$wave_id, cleaned_NHANES$ethnicity_2)
+count_wave_ethn
+
+addmargins(count_wave_ethn, margin = 2)
+
+# row percentages
+
+row_percent_ethn <- prop.table(count_wave_ethn, margin = 1) * 100
+row_percent_ethn
+
+#combine 
+
+ethn_percent_size <- as.data.frame(cbind(
+  n = rowSums(count_wave_ethn),
+  Asian = round(row_percent_ethn[, 1], 1),
+  Black = round(row_percent_ethn[, 2], 1),
+  Mexican = round(row_percent_ethn[, 3], 1),
+  Other = round(row_percent_ethn[, 4], 1),
+  "Other Hispanic" = round(row_percent_ethn[, 5], 1),
+  White = round(row_percent_ethn[, 6], 1)
+))
+
+ethn_percent_size
+
+# Format table
+
+ethn_percent_size <- kable(
+  ethn_percent_size, 
+  format = "latex",
+  booktabs  = TRUE,
+  col.names = c(
+    "Count", 
+    "Asian", 
+    "Black", 
+    "Mexican", 
+    "Other", 
+    "Other Hispanic", 
+    "White"),
+  caption = "Count and percentage of each ethnicity for each wave"
+)
+
+ethn_percent_size <- ethn_percent_size %>%
+	kable_styling(
+		latex_options = "hold_position", 
+		full_width = FALSE
+	) %>%
+  add_header_above(
+		c(" " = 1, " " = 1, "Ethnicity" = 6)
+	)
+
+ethn_percent_size
+```
+
+
+
+
+## Summary statistics of average systolic blood pressure, by wave
+
+``` {r tables_summary}
+
+#generate summary
+
+summary_stats <- cleaned_NHANES_avrg_SBP %>%
+  group_by(wave_id) %>%
+  summarise(
+    min = round(min(SBP_avg, na.rm = TRUE), 1),
+    max = round(max(SBP_avg, na.rm = TRUE), 1),
+    median = round(median(SBP_avg, na.rm = TRUE), 1),
+    mean = round(mean(SBP_avg, na.rm = TRUE), 1),
+    sd = round(sd(SBP_avg, na.rm = TRUE), 1)
+  )
+
+summary_stats
+
+# format Table
+
+summary_stats <- kable(
+  summary_stats, 
+  format = "latex",
+  booktabs  = TRUE,
+  col.names = c(
+    "wave ID", 
+    "minimum", 
+    "maximum", 
+    "median", 
+    "mean", 
+    "SD"),
+  caption = "Summary statistics of average systolic blood pressure, by wave"
+)
+
+summary_stats <- summary_stats %>%
+	kable_styling(
+		latex_options = "hold_position", 
+		full_width = FALSE
+	) %>%
+  add_header_above(
+		c(" " = 1, "Summary Statistic" = 5)
+	)
+
+summary_stats
+```
+
+# Bibliography
